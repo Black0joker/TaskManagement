@@ -5,6 +5,7 @@ using TaskManagement.Application.Features.Projects;
 using TaskManagement.Application.Features.Projects.CreateProject;
 using TaskManagement.Application.Features.Projects.DeleteProject;
 using TaskManagement.Application.Features.Projects.GetProject;
+using TaskManagement.Application.Features.Labels.CreateProjectLabel;
 using TaskManagement.Application.Features.Projects.GetProjectLabels;
 using TaskManagement.Application.Features.Projects.GetProjectTasks;
 using TaskManagement.Application.Features.Projects.ListProjects;
@@ -104,4 +105,22 @@ public class ProjectsController : ControllerBase
         var labels = await _sender.Send(new GetProjectLabelsQuery(id), cancellationToken);
         return Ok(labels);
     }
+
+    [HttpPost("{id}/labels")]
+    [Authorize(Policy = ApplicationPermissions.Projects.Update)]
+    [ProducesResponseType(typeof(ProjectLabelSummary), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProjectLabelSummary>> CreateProjectLabel(
+        string id,
+        [FromBody] CreateProjectLabelRequest request,
+        CancellationToken cancellationToken)
+    {
+        var label = await _sender.Send(
+            new CreateProjectLabelCommand(id, request.Name, request.Color),
+            cancellationToken);
+        return Ok(label);
+    }
 }
+
+public sealed record CreateProjectLabelRequest(string Name, string Color);

@@ -2,10 +2,12 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.Application.Features.Tasks;
+using TaskManagement.Application.Features.Tasks.AssignLabelToTask;
 using TaskManagement.Application.Features.Tasks.CreateTask;
 using TaskManagement.Application.Features.Tasks.DeleteTask;
 using TaskManagement.Application.Features.Tasks.GetTask;
 using TaskManagement.Application.Features.Tasks.ListTasks;
+using TaskManagement.Application.Features.Tasks.RemoveLabelFromTask;
 using TaskManagement.Application.Features.Tasks.UpdateTask;
 using TaskManagement.Application.Features.Tasks.UpdateTaskAssignee;
 using TaskManagement.Application.Features.Tasks.UpdateTaskPriority;
@@ -137,6 +139,27 @@ public class TasksController : ControllerBase
         var command = new UpdateTaskAssigneeCommand(id, request.UserId);
         var task = await _sender.Send(command, cancellationToken);
         return Ok(task);
+    }
+
+    [HttpPost("{id}/labels/{labelId}")]
+    [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AssignLabel(string id, string labelId, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new AssignLabelToTaskCommand(id, labelId), cancellationToken);
+        return Ok();
+    }
+
+    [HttpDelete("{id}/labels/{labelId}")]
+    [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveLabel(string id, string labelId, CancellationToken cancellationToken)
+    {
+        await _sender.Send(new RemoveLabelFromTaskCommand(id, labelId), cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
