@@ -1363,7 +1363,7 @@ Build the project in this order:
 
 * [x] Validation
 * [x] ProblemDetails
-* [ ] Logging
+* [x] Logging (Phase 28)
 * [x] Unit tests (Phase 27)
 * [x] Integration tests (Phase 27)
 * [x] Security (Phase 30)
