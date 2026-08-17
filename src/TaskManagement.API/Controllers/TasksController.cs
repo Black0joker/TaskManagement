@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Application.Common.Pagination;
 using TaskManagement.Application.Features.Comments;
 using TaskManagement.Application.Features.Comments.CreateComment;
 using TaskManagement.Application.Features.Comments.GetTaskComments;
@@ -34,8 +35,8 @@ public class TasksController : ControllerBase
 
     [HttpGet]
     [Authorize(Policy = ApplicationPermissions.Tasks.Read)]
-    [ProducesResponseType(typeof(IReadOnlyList<TaskResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<TaskResponse>>> GetTasks(
+    [ProducesResponseType(typeof(PagedResult<TaskResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<TaskResponse>>> GetTasks(
         [FromQuery] string? projectId,
         [FromQuery] bool overdue = false,
         [FromQuery] bool dueToday = false,
@@ -43,10 +44,12 @@ public class TasksController : ControllerBase
         [FromQuery] bool noDueDate = false,
         [FromQuery] DateTime? dueBefore = null,
         [FromQuery] DateTime? dueAfter = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParameters.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         var tasks = await _sender.Send(
-            new ListTasksQuery(projectId, overdue, dueToday, dueThisWeek, noDueDate, dueBefore, dueAfter),
+            new ListTasksQuery(projectId, overdue, dueToday, dueThisWeek, noDueDate, dueBefore, dueAfter, page, pageSize),
             cancellationToken);
         return Ok(tasks);
     }

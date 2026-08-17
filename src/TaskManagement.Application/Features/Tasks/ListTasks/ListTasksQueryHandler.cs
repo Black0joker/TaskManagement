@@ -4,12 +4,13 @@ using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Application.Common.Pagination;
 using TaskManagement.Domain.Authorization;
 using TaskManagement.Domain.Enums;
 
 namespace TaskManagement.Application.Features.Tasks.ListTasks;
 
-public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyList<TaskResponse>>
+public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult<TaskResponse>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
@@ -25,12 +26,14 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyLi
         _currentUserService = currentUserService;
     }
 
-    public async Task<IReadOnlyList<TaskResponse>> Handle(ListTasksQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<TaskResponse>> Handle(ListTasksQuery request, CancellationToken cancellationToken)
     {
+        var pagination = new PaginationParameters(request.Page, request.PageSize);
+
         var userId = _currentUserService.UserId;
         if (userId is null)
         {
-            return Array.Empty<TaskResponse>();
+            return new PagedResult<TaskResponse>(Array.Empty<TaskResponse>(), pagination.NormalizedPage, pagination.NormalizedPageSize, 0);
         }
 
         var isSystemAdmin = _currentUserService.IsInRole(ApplicationRoles.Admin);
@@ -64,8 +67,12 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyLi
 
         query = ApplyDueDateFilters(query, request);
 
-        return await query
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(t => t.CreatedAt)
+            .Skip((pagination.NormalizedPage - 1) * pagination.NormalizedPageSize)
+            .Take(pagination.NormalizedPageSize)
             .Select(t => new TaskResponse(
                 t.Id,
                 t.ProjectId,
@@ -79,6 +86,8 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyLi
                 t.CreatedAt,
                 t.UpdatedAt))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<TaskResponse>(items, pagination.NormalizedPage, pagination.NormalizedPageSize, totalCount);
     }
 
     private static IQueryable<Domain.Entities.TaskItem> ApplyDueDateFilters(
