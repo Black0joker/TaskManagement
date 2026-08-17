@@ -87,6 +87,14 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
             query = query.Where(t => t.TaskItemLabels.Any(tl => tl.LabelId == request.LabelId));
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim();
+            query = query.Where(t =>
+                t.Title.Contains(search) ||
+                (t.Description != null && t.Description.Contains(search)));
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         query = ApplySorting(query, request);

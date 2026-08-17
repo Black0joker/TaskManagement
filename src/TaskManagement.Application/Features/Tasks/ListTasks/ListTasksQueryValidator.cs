@@ -14,6 +14,10 @@ public class ListTasksQueryValidator : AbstractValidator<ListTasksQuery>
             .When(x => !string.IsNullOrWhiteSpace(x.SortBy))
             .WithMessage($"sortBy must be one of: {string.Join(", ", SortableProperties)}.");
 
+        RuleFor(x => x.Search)
+            .MaximumLength(200)
+            .When(x => !string.IsNullOrWhiteSpace(x.Search));
+
         RuleFor(x => x.SortDirection)
             .Must(direction => SortDirections.Contains(direction!, StringComparer.OrdinalIgnoreCase))
             .When(x => !string.IsNullOrWhiteSpace(x.SortDirection))

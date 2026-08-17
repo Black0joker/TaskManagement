@@ -54,6 +54,7 @@ public class TasksController : ControllerBase
         [FromQuery] DateTime? dueTo = null,
         [FromQuery] string? sortBy = null,
         [FromQuery] string? sortDirection = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var tasks = await _sender.Send(
@@ -74,7 +75,8 @@ public class TasksController : ControllerBase
                 dueFrom,
                 dueTo,
                 sortBy,
-                sortDirection),
+                sortDirection,
+                search),
             cancellationToken);
         return Ok(tasks);
     }
