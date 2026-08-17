@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TaskManagement.Domain.Authorization;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Domain.Enums;
 
@@ -8,8 +9,8 @@ namespace TaskManagement.Infrastructure.Persistence;
 
 public class DatabaseSeeder
 {
-    public const string AdminRole = "Admin";
-    public const string UserRole = "User";
+    public const string AdminRole = ApplicationRoles.Admin;
+    public const string UserRole = ApplicationRoles.User;
 
     private const string AdminEmail = "admin@taskmanagement.local";
     private const string AdminPassword = "Admin@12345";

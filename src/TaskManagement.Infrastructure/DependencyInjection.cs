@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,8 +10,10 @@ using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Identity;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Common.Models;
+using TaskManagement.Domain.Authorization;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Authentication;
+using TaskManagement.Infrastructure.Authorization;
 using TaskManagement.Infrastructure.Identity;
 using TaskManagement.Infrastructure.Persistence;
 
@@ -32,6 +35,7 @@ public static class DependencyInjection
 
         AddIdentityServices(services);
         AddAuthenticationServices(services, configuration);
+        AddAuthorizationServices(services);
 
         services.Configure<AuthenticationSettings>(
             configuration.GetSection(AuthenticationSettings.SectionName));
@@ -85,5 +89,28 @@ public static class DependencyInjection
                     ClockSkew = TimeSpan.Zero
                 };
             });
+    }
+
+    private static void AddAuthorizationServices(IServiceCollection services)
+    {
+        services.AddAuthorization(options =>
+        {
+            // Role-based policy for admin-only endpoints.
+            options.AddPolicy("AdminOnly", policy =>
+                policy.RequireRole(ApplicationRoles.Admin));
+
+            // Permission-based policies: one policy per permission.
+            // Use with [Authorize(Policy = ApplicationPermissions.Projects.Create)].
+            foreach (var permission in ApplicationPermissions.All)
+            {
+                options.AddPolicy(permission, policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.Requirements.Add(new PermissionRequirement(permission));
+                });
+            }
+        });
+
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
     }
 }

@@ -1,4 +1,4 @@
-namespace TaskManagement.Infrastructure.Identity;
+namespace TaskManagement.Domain.Authorization;
 
 public static class ApplicationRoles
 {

@@ -79,18 +79,18 @@ The Domain layer should not depend on Infrastructure or API.
 
 ## Tasks
 
-* [ ] Create the ASP.NET Core 10 solution.
-* [ ] Create the API project.
-* [ ] Create the Application project.
-* [ ] Create the Domain project.
-* [ ] Create the Infrastructure project.
-* [ ] Create the Tests project.
-* [ ] Configure project references.
-* [ ] Configure nullable reference types.
-* [ ] Configure global usings.
-* [ ] Configure development/production settings.
-* [ ] Configure Swagger/OpenAPI.
-* [ ] Configure dependency injection.
+* [x] Create the ASP.NET Core 10 solution.
+* [x] Create the API project.
+* [x] Create the Application project.
+* [x] Create the Domain project.
+* [x] Create the Infrastructure project.
+* [x] Create the Tests project.
+* [x] Configure project references.
+* [x] Configure nullable reference types.
+* [x] Configure global usings.
+* [x] Configure development/production settings.
+* [x] Configure Swagger/OpenAPI.
+* [x] Configure dependency injection.
 
 Expected structure:
 
@@ -361,7 +361,7 @@ Features:
 * [x] Logout/revoke refresh token
 * [x] Password hashing through ASP.NET Core Identity
 * [x] Authentication middleware
-* [ ] Authorization policies (foundation added; role/permission policies in Phase 7)
+* [x] Authorization policies (role-based + permission-based policies implemented in Phase 7)
 
 Endpoints:
 
@@ -1318,20 +1318,20 @@ Build the project in this order:
 
 ## Milestone 1 — Foundation
 
-* [ ] ASP.NET Core 10 solution
-* [ ] Clean Architecture
-* [ ] EF Core
-* [ ] Database
-* [ ] Migrations
-* [ ] Swagger
+* [x] ASP.NET Core 10 solution
+* [x] Clean Architecture
+* [x] EF Core
+* [x] Database
+* [x] Migrations
+* [x] Swagger
 
 ## Milestone 2 — Authentication
 
-* [ ] Register
-* [ ] Login
-* [ ] JWT
-* [ ] Refresh tokens
-* [ ] Authorization
+* [x] Register
+* [x] Login
+* [x] JWT
+* [x] Refresh tokens
+* [x] Authorization (Phase 7)
 
 ## Milestone 3 — Projects
 

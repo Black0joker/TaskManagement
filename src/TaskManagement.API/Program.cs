@@ -16,9 +16,9 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Authentication and authorization.
+// Authorization policies are registered by Infrastructure.AddInfrastructureServices.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
