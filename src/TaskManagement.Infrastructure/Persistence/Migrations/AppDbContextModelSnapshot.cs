@@ -185,7 +185,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TaskItemId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.Label", b =>
@@ -214,7 +214,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name", "ProjectId")
                         .IsUnique();
 
-                    b.ToTable("Labels");
+                    b.ToTable("Labels", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.Project", b =>
@@ -247,7 +247,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.ProjectMember", b =>
@@ -265,7 +265,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectMembers");
+                    b.ToTable("ProjectMembers", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.RefreshToken", b =>
@@ -306,7 +306,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.TaskItem", b =>
@@ -369,7 +369,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("TaskItems");
+                    b.ToTable("TaskItems", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.TaskItemLabel", b =>
@@ -384,7 +384,7 @@ namespace TaskManagement.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("LabelId");
 
-                    b.ToTable("TaskItemLabels");
+                    b.ToTable("TaskItemLabels", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.User", b =>

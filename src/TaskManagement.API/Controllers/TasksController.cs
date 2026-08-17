@@ -197,13 +197,17 @@ public class TasksController : ControllerBase
 
     [HttpGet("{id}/comments")]
     [Authorize(Policy = ApplicationPermissions.Tasks.Read)]
-    [ProducesResponseType(typeof(IReadOnlyList<CommentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<CommentResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> ListTaskComments(
+    public async Task<ActionResult<PagedResult<CommentResponse>>> ListTaskComments(
         string id,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationParameters.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        var comments = await _sender.Send(new GetTaskCommentsQuery(id), cancellationToken);
+        var comments = await _sender.Send(
+            new GetTaskCommentsQuery(id, new PaginationParameters(page, pageSize)),
+            cancellationToken);
         return Ok(comments);
     }
 

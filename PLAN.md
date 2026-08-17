@@ -1068,13 +1068,13 @@ Do not log:
 
 Before considering the API production-ready:
 
-* [ ] Use `AsNoTracking()` for read-only queries.
-* [ ] Project directly into DTOs where appropriate.
-* [ ] Avoid N+1 queries.
-* [ ] Add database indexes.
-* [ ] Paginate every potentially large collection.
-* [ ] Avoid loading entire tables into memory.
-* [ ] Use async EF Core APIs.
+* [x] Use `AsNoTracking()` for read-only queries. (Phase 29: all query handlers verified)
+* [x] Project directly into DTOs where appropriate. (Phase 29: all queries project via Select)
+* [x] Avoid N+1 queries. (Phase 29: single-query projections verified)
+* [x] Add database indexes. (Phase 29: verified - all FK columns, composite keys and unique constraints are indexed)
+* [x] Paginate every potentially large collection. (Phase 29: comments endpoint paginated; tasks already paged)
+* [x] Avoid loading entire tables into memory. (Phase 29: all collections paginated)
+* [x] Use async EF Core APIs. (Phase 29: verified throughout)
 * [ ] Review generated SQL for important queries.
 
 ---

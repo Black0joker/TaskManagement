@@ -80,7 +80,8 @@ public class TaskWorkflowIntegrationTests : IClassFixture<TaskManagementApiFacto
             new { content = "First comment" }, memberToken, HttpStatusCode.Created);
 
         var comments = await GetJsonAsync($"/api/tasks/{taskId}/comments", memberToken);
-        Assert.Single(comments!.AsArray());
+        Assert.Single(comments!["items"]!.AsArray());
+        Assert.Equal(1, (int?)comments["totalCount"]);
 
         // Two more tasks so sorting and pagination have data to work with.
         await PostJsonAsync("/api/tasks",
