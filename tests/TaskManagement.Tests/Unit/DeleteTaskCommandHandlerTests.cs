@@ -1,0 +1,39 @@
+using Microsoft.EntityFrameworkCore;
+using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Application.Features.Tasks.DeleteTask;
+using TaskManagement.Domain.Enums;
+using TaskManagement.Tests.Unit.Testing;
+
+namespace TaskManagement.Tests.Unit;
+
+public class DeleteTaskCommandHandlerTests : HandlerTestBase
+{
+    private readonly DeleteTaskCommandHandler _handler;
+
+    public DeleteTaskCommandHandlerTests()
+    {
+        _handler = new DeleteTaskCommandHandler(Context);
+    }
+
+    [Fact]
+    public async Task Handle_RemovesTask_WhenItExists()
+    {
+        var owner = await AddUserAsync("owner-1");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id);
+
+        await _handler.Handle(new DeleteTaskCommand(task.Id), CancellationToken.None);
+
+        Assert.False(await Context.TaskItems.AnyAsync(t => t.Id == task.Id));
+    }
+
+    [Fact]
+    public async Task Handle_ThrowsNotFound_WhenTaskMissing()
+    {
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+            _handler.Handle(new DeleteTaskCommand("missing-task"), CancellationToken.None));
+
+        Assert.Contains("missing-task", ex.Message);
+    }
+}

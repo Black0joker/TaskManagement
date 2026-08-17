@@ -1364,8 +1364,8 @@ Build the project in this order:
 * [x] Validation
 * [x] ProblemDetails
 * [ ] Logging
-* [ ] Unit tests
-* [ ] Integration tests
+* [x] Unit tests (Phase 27)
+* [x] Integration tests (Phase 27)
 * [ ] Security
 * [ ] Docker
 * [ ] CI/CD
