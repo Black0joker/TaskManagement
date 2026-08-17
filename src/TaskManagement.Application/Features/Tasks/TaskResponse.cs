@@ -10,7 +10,7 @@ public record TaskResponse(
     TaskItemStatus Status,
     TaskItemPriority Priority,
     DateTime? DueDate,
-    string? AssignedToId,
+    TaskAssigneeDto? AssignedTo,
     string CreatedById,
     DateTime CreatedAt,
     DateTime UpdatedAt);

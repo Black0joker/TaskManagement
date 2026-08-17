@@ -32,7 +32,9 @@ public class GetTaskQueryHandler : IRequestHandler<GetTaskQuery, TaskDetailsResp
                 t.Status,
                 t.Priority,
                 t.DueDate,
-                t.AssignedToId,
+                t.AssignedTo != null
+                    ? new TaskAssigneeDto(t.AssignedTo.Id, t.AssignedTo.FirstName + " " + t.AssignedTo.LastName)
+                    : null,
                 t.CreatedById,
                 t.CreatedAt,
                 t.UpdatedAt,

@@ -63,17 +63,6 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskR
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new TaskResponse(
-            task.Id,
-            task.ProjectId,
-            task.Title,
-            task.Description,
-            task.Status,
-            task.Priority,
-            task.DueDate,
-            task.AssignedToId,
-            task.CreatedById,
-            task.CreatedAt,
-            task.UpdatedAt);
+        return await TaskResponseFactory.CreateAsync(task, _context, cancellationToken);
     }
 }

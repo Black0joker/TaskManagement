@@ -10,7 +10,7 @@ public sealed record TaskDetailsResponse(
     TaskItemStatus Status,
     TaskItemPriority Priority,
     DateTime? DueDate,
-    string? AssignedToId,
+    TaskAssigneeDto? AssignedTo,
     string CreatedById,
     DateTime CreatedAt,
     DateTime UpdatedAt,

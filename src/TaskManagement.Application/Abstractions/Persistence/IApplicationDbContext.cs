@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<TaskItemLabel> TaskItemLabels { get; }
     DbSet<ProjectMember> ProjectMembers { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<User> Users { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
