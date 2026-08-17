@@ -89,8 +89,9 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
 
         var totalCount = await query.CountAsync(cancellationToken);
 
+        query = ApplySorting(query, request);
+
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
             .Skip((pagination.NormalizedPage - 1) * pagination.NormalizedPageSize)
             .Take(pagination.NormalizedPageSize)
             .Select(t => new TaskResponse(
@@ -108,6 +109,28 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
             .ToListAsync(cancellationToken);
 
         return new PagedResult<TaskResponse>(items, pagination.NormalizedPage, pagination.NormalizedPageSize, totalCount);
+    }
+
+    private static IQueryable<Domain.Entities.TaskItem> ApplySorting(
+        IQueryable<Domain.Entities.TaskItem> query,
+        ListTasksQuery request)
+    {
+        var descending = string.Equals(request.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        // Default ordering: newest first.
+        if (string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            return query.OrderByDescending(t => t.CreatedAt);
+        }
+
+        // Whitelisted properties only — client input is never injected into the query.
+        return request.SortBy.Trim().ToLowerInvariant() switch
+        {
+            "createdat" => descending ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt),
+            "duedate" => descending ? query.OrderByDescending(t => t.DueDate) : query.OrderBy(t => t.DueDate),
+            "priority" => descending ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority),
+            _ => query.OrderByDescending(t => t.CreatedAt)
+        };
     }
 
     private static IQueryable<Domain.Entities.TaskItem> ApplyDueDateFilters(

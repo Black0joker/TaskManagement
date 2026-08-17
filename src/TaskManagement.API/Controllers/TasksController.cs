@@ -52,6 +52,8 @@ public class TasksController : ControllerBase
         [FromQuery] string? labelId = null,
         [FromQuery] DateTime? dueFrom = null,
         [FromQuery] DateTime? dueTo = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDirection = null,
         CancellationToken cancellationToken = default)
     {
         var tasks = await _sender.Send(
@@ -70,7 +72,9 @@ public class TasksController : ControllerBase
                 assignedToId,
                 labelId,
                 dueFrom,
-                dueTo),
+                dueTo,
+                sortBy,
+                sortDirection),
             cancellationToken);
         return Ok(tasks);
     }

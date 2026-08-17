@@ -19,4 +19,6 @@ public sealed record ListTasksQuery(
     string? AssignedToId = null,
     string? LabelId = null,
     DateTime? DueFrom = null,
-    DateTime? DueTo = null) : IRequest<PagedResult<TaskResponse>>;
+    DateTime? DueTo = null,
+    string? SortBy = null,
+    string? SortDirection = null) : IRequest<PagedResult<TaskResponse>>;

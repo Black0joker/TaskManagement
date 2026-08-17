@@ -1356,7 +1356,7 @@ Build the project in this order:
 
 * [x] Pagination
 * [x] Filtering
-* [ ] Sorting
+* [x] Sorting
 * [ ] Searching
 
 ## Milestone 7 — Production Quality
