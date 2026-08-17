@@ -32,9 +32,17 @@ public class TasksController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<TaskResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<TaskResponse>>> GetTasks(
         [FromQuery] string? projectId,
-        CancellationToken cancellationToken)
+        [FromQuery] bool overdue = false,
+        [FromQuery] bool dueToday = false,
+        [FromQuery] bool dueThisWeek = false,
+        [FromQuery] bool noDueDate = false,
+        [FromQuery] DateTime? dueBefore = null,
+        [FromQuery] DateTime? dueAfter = null,
+        CancellationToken cancellationToken = default)
     {
-        var tasks = await _sender.Send(new ListTasksQuery(projectId), cancellationToken);
+        var tasks = await _sender.Send(
+            new ListTasksQuery(projectId, overdue, dueToday, dueThisWeek, noDueDate, dueBefore, dueAfter),
+            cancellationToken);
         return Ok(tasks);
     }
 

@@ -5,6 +5,7 @@ using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Domain.Authorization;
+using TaskManagement.Domain.Enums;
 
 namespace TaskManagement.Application.Features.Tasks.ListTasks;
 
@@ -61,6 +62,8 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyLi
                 t.Project.ProjectMembers.Any(pm => pm.UserId == userId));
         }
 
+        query = ApplyDueDateFilters(query, request);
+
         return await query
             .OrderByDescending(t => t.CreatedAt)
             .Select(t => new TaskResponse(
@@ -76,5 +79,57 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, IReadOnlyLi
                 t.CreatedAt,
                 t.UpdatedAt))
             .ToListAsync(cancellationToken);
+    }
+
+    private static IQueryable<Domain.Entities.TaskItem> ApplyDueDateFilters(
+        IQueryable<Domain.Entities.TaskItem> query,
+        ListTasksQuery request)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        // Overdue: past the due date and still open (completed or cancelled
+        // work is never reported as overdue).
+        if (request.Overdue)
+        {
+            query = query.Where(t =>
+                t.DueDate != null &&
+                t.DueDate.Value.Date < today &&
+                t.Status != TaskItemStatus.Done &&
+                t.Status != TaskItemStatus.Cancelled);
+        }
+
+        if (request.DueToday)
+        {
+            query = query.Where(t => t.DueDate != null && t.DueDate.Value.Date == today);
+        }
+
+        // Rolling 7-day window starting today (culture-independent).
+        if (request.DueThisWeek)
+        {
+            var weekEnd = today.AddDays(7);
+            query = query.Where(t =>
+                t.DueDate != null &&
+                t.DueDate.Value.Date >= today &&
+                t.DueDate.Value.Date < weekEnd);
+        }
+
+        if (request.NoDueDate)
+        {
+            query = query.Where(t => t.DueDate == null);
+        }
+
+        if (request.DueBefore.HasValue)
+        {
+            var dueBefore = request.DueBefore.Value;
+            query = query.Where(t => t.DueDate != null && t.DueDate.Value < dueBefore);
+        }
+
+        if (request.DueAfter.HasValue)
+        {
+            var dueAfter = request.DueAfter.Value;
+            query = query.Where(t => t.DueDate != null && t.DueDate.Value > dueAfter);
+        }
+
+        return query;
     }
 }
