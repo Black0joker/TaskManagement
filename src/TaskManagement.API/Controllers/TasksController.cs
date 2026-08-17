@@ -209,7 +209,7 @@ public class TasksController : ControllerBase
 
     [HttpPost("{id}/comments")]
     [Authorize(Policy = ApplicationPermissions.Comments.Create)]
-    [ProducesResponseType(typeof(CommentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CommentResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CommentResponse>> CreateComment(
@@ -220,7 +220,7 @@ public class TasksController : ControllerBase
         var comment = await _sender.Send(
             new CreateCommentCommand(id, request.Content),
             cancellationToken);
-        return Ok(comment);
+        return Created(string.Empty, comment);
     }
 
     [HttpDelete("{id}")]
