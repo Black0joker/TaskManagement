@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
@@ -11,13 +13,19 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
 {
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<UpdateTaskStatusCommandHandler> _logger;
 
     public UpdateTaskStatusCommandHandler(
         IApplicationDbContext context,
-        IProjectAccessService projectAccess)
+        IProjectAccessService projectAccess,
+        ICurrentUserService currentUserService,
+        ILogger<UpdateTaskStatusCommandHandler> logger)
     {
         _context = context;
         _projectAccess = projectAccess;
+        _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<TaskResponse> Handle(UpdateTaskStatusCommand request, CancellationToken cancellationToken)
@@ -55,8 +63,16 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
             throw new ForbiddenAccessException("Only project owners and admins can move a task backwards.");
         }
 
+        var oldStatus = task.Status;
         task.Status = newStatus;
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Task status changed ({TaskId}) from {OldStatus} to {NewStatus} by user {UserId}",
+            task.Id,
+            oldStatus,
+            newStatus,
+            _currentUserService.UserId);
 
         return await TaskResponseFactory.CreateAsync(task, _context, cancellationToken);
     }

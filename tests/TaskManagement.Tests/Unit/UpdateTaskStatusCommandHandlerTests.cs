@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Features.Tasks.UpdateTaskStatus;
 using TaskManagement.Domain.Enums;
@@ -12,7 +13,8 @@ public class UpdateTaskStatusCommandHandlerTests : HandlerTestBase
 
     public UpdateTaskStatusCommandHandlerTests()
     {
-        _handler = new UpdateTaskStatusCommandHandler(Context, ProjectAccess);
+        _handler = new UpdateTaskStatusCommandHandler(
+            Context, ProjectAccess, CurrentUser, NullLogger<UpdateTaskStatusCommandHandler>.Instance);
     }
 
     [Fact]

@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
@@ -10,13 +12,19 @@ public class UpdateTaskAssigneeCommandHandler : IRequestHandler<UpdateTaskAssign
 {
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<UpdateTaskAssigneeCommandHandler> _logger;
 
     public UpdateTaskAssigneeCommandHandler(
         IApplicationDbContext context,
-        IProjectAccessService projectAccess)
+        IProjectAccessService projectAccess,
+        ICurrentUserService currentUserService,
+        ILogger<UpdateTaskAssigneeCommandHandler> logger)
     {
         _context = context;
         _projectAccess = projectAccess;
+        _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<TaskResponse> Handle(UpdateTaskAssigneeCommand request, CancellationToken cancellationToken)
@@ -56,6 +64,22 @@ public class UpdateTaskAssigneeCommandHandler : IRequestHandler<UpdateTaskAssign
 
         task.AssignedToId = userId;
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (userId is null)
+        {
+            _logger.LogInformation(
+                "Task unassigned ({TaskId}) by user {UserId}",
+                task.Id,
+                _currentUserService.UserId);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Task assigned ({TaskId}) to {AssigneeId} by user {UserId}",
+                task.Id,
+                userId,
+                _currentUserService.UserId);
+        }
 
         return await TaskResponseFactory.CreateAsync(task, _context, cancellationToken);
     }

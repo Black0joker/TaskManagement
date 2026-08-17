@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
@@ -13,15 +14,18 @@ public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand,
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<CreateCommentCommandHandler> _logger;
 
     public CreateCommentCommandHandler(
         IApplicationDbContext context,
         IProjectAccessService projectAccess,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILogger<CreateCommentCommandHandler> logger)
     {
         _context = context;
         _projectAccess = projectAccess;
         _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<CommentResponse> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
@@ -54,6 +58,12 @@ public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand,
 
         _context.Comments.Add(comment);
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Comment created ({CommentId}) on task {TaskId} by user {UserId}",
+            comment.Id,
+            comment.TaskItemId,
+            _currentUserService.UserId);
 
         var authorName = await _context.Comments
             .AsNoTracking()

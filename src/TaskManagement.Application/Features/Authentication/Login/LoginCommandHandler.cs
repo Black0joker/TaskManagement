@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Identity;
@@ -16,17 +17,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenRespon
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IApplicationDbContext _dbContext;
     private readonly AuthenticationSettings _authSettings;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
         IIdentityService identityService,
         IJwtTokenGenerator jwtTokenGenerator,
         IApplicationDbContext dbContext,
-        IOptions<AuthenticationSettings> authSettings)
+        IOptions<AuthenticationSettings> authSettings,
+        ILogger<LoginCommandHandler> logger)
     {
         _identityService = identityService;
         _jwtTokenGenerator = jwtTokenGenerator;
         _dbContext = dbContext;
         _authSettings = authSettings.Value;
+        _logger = logger;
     }
 
     public async Task<AuthTokenResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -34,6 +38,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenRespon
         var user = await _identityService.ValidateCredentialsAsync(request.Email, request.Password);
         if (user is null)
         {
+            // Only the email is logged; passwords and tokens are never written to logs.
+            _logger.LogWarning("Failed login attempt for email {Email}", request.Email);
             throw new UnauthorizedException("Invalid email or password.");
         }
 
@@ -51,6 +57,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenRespon
 
         _dbContext.RefreshTokens.Add(refreshToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("User logged in ({UserId})", user.Id);
 
         return new AuthTokenResponse(accessToken, refreshTokenValue, accessTokenExpiresAt);
     }

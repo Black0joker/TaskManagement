@@ -11,6 +11,15 @@ using TaskManagement.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Structured logging: single-line JSON events with UTC timestamps.
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options =>
+{
+    options.UseUtcTimestamp = true;
+    options.TimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+    options.IncludeScopes = true;
+});
+
 // Add services to the container.
 builder.Services.AddOpenApi(options =>
 {
@@ -94,6 +103,9 @@ if (app.Environment.IsDevelopment())
         logger.LogError(ex, "An error occurred while applying migrations and seeding the database.");
     }
 }
+
+// Request logging wraps everything, including exception handling.
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Global exception handling.
 app.UseMiddleware<ExceptionHandlingMiddleware>();

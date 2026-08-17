@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
@@ -13,15 +14,18 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskR
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<CreateTaskCommandHandler> _logger;
 
     public CreateTaskCommandHandler(
         IApplicationDbContext context,
         IProjectAccessService projectAccess,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILogger<CreateTaskCommandHandler> logger)
     {
         _context = context;
         _projectAccess = projectAccess;
         _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<TaskResponse> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
@@ -79,6 +83,12 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskR
 
         _context.TaskItems.Add(task);
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Task created ({TaskId}) in project {ProjectId} by user {UserId}",
+            task.Id,
+            task.ProjectId,
+            _currentUserService.UserId);
 
         return await TaskResponseFactory.CreateAsync(task, _context, cancellationToken);
     }

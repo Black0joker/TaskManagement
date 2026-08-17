@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Common.Exceptions;
@@ -11,13 +12,16 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<CreateProjectCommandHandler> _logger;
 
     public CreateProjectCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILogger<CreateProjectCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<ProjectResponse> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
@@ -45,6 +49,12 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         });
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Project created ({ProjectId}, {ProjectName}) by user {UserId}",
+            project.Id,
+            project.Name,
+            _currentUserService.UserId);
 
         return new ProjectResponse(
             project.Id,

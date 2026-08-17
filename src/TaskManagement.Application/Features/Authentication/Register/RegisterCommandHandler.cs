@@ -1,5 +1,6 @@
 using FluentValidation.Results;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.Abstractions.Identity;
 using TaskManagement.Application.Common.Exceptions;
 
@@ -8,10 +9,14 @@ namespace TaskManagement.Application.Features.Authentication.Register;
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
 {
     private readonly IIdentityService _identityService;
+    private readonly ILogger<RegisterCommandHandler> _logger;
 
-    public RegisterCommandHandler(IIdentityService identityService)
+    public RegisterCommandHandler(
+        IIdentityService identityService,
+        ILogger<RegisterCommandHandler> logger)
     {
         _identityService = identityService;
+        _logger = logger;
     }
 
     public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -38,6 +43,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 
         var user = await _identityService.GetUserByIdAsync(result.CreatedUserId!);
 
-        return new RegisterResponse(user!.Id, user.Email, user.FirstName, user.LastName);
+        _logger.LogInformation("User registered ({UserId})", user!.Id);
+
+        return new RegisterResponse(user.Id, user.Email, user.FirstName, user.LastName);
     }
 }

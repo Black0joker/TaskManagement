@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Features.Tasks.CreateTask;
 using TaskManagement.Domain.Enums;
@@ -13,7 +14,8 @@ public class CreateTaskCommandHandlerTests : HandlerTestBase
 
     public CreateTaskCommandHandlerTests()
     {
-        _handler = new CreateTaskCommandHandler(Context, ProjectAccess, CurrentUser);
+        _handler = new CreateTaskCommandHandler(
+            Context, ProjectAccess, CurrentUser, NullLogger<CreateTaskCommandHandler>.Instance);
     }
 
     [Fact]
