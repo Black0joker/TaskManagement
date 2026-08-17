@@ -14,7 +14,8 @@ public static class RolePermissions
         ApplicationPermissions.Tasks.Create,
         ApplicationPermissions.Tasks.Update,
         ApplicationPermissions.Comments.Create,
-        ApplicationPermissions.Comments.Update
+        ApplicationPermissions.Comments.Update,
+        ApplicationPermissions.Comments.Delete
     };
 
     private static readonly IReadOnlySet<string> NoPermissions = new HashSet<string>();

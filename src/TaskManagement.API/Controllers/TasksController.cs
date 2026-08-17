@@ -1,6 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Application.Features.Comments;
+using TaskManagement.Application.Features.Comments.CreateComment;
+using TaskManagement.Application.Features.Comments.GetTaskComments;
 using TaskManagement.Application.Features.Tasks;
 using TaskManagement.Application.Features.Tasks.AssignLabelToTask;
 using TaskManagement.Application.Features.Tasks.CreateTask;
@@ -162,6 +165,34 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id}/comments")]
+    [Authorize(Policy = ApplicationPermissions.Tasks.Read)]
+    [ProducesResponseType(typeof(IReadOnlyList<CommentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> ListTaskComments(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        var comments = await _sender.Send(new GetTaskCommentsQuery(id), cancellationToken);
+        return Ok(comments);
+    }
+
+    [HttpPost("{id}/comments")]
+    [Authorize(Policy = ApplicationPermissions.Comments.Create)]
+    [ProducesResponseType(typeof(CommentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CommentResponse>> CreateComment(
+        string id,
+        [FromBody] CreateCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var comment = await _sender.Send(
+            new CreateCommentCommand(id, request.Content),
+            cancellationToken);
+        return Ok(comment);
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Policy = ApplicationPermissions.Tasks.Delete)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -188,3 +219,6 @@ public sealed record UpdateTaskStatusRequest(TaskItemStatus? Status);
 public sealed record UpdateTaskPriorityRequest(TaskItemPriority? Priority);
 
 public sealed record UpdateTaskAssigneeRequest(string? UserId);
+
+public sealed record CreateCommentRequest(string Content);
+

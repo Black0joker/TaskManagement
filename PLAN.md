@@ -1350,7 +1350,7 @@ Build the project in this order:
 ## Milestone 5 — Collaboration
 
 * [x] Labels
-* [ ] Comments
+* [x] Comments
 
 ## Milestone 6 — Querying
 
