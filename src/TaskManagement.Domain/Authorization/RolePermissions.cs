@@ -9,6 +9,7 @@ public static class RolePermissions
     {
         ApplicationPermissions.Projects.Read,
         ApplicationPermissions.Projects.Create,
+        ApplicationPermissions.Projects.Update,
         ApplicationPermissions.Tasks.Read,
         ApplicationPermissions.Tasks.Create,
         ApplicationPermissions.Tasks.Update,
