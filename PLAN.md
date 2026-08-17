@@ -1342,7 +1342,7 @@ Build the project in this order:
 ## Milestone 4 — Tasks
 
 * [x] Task CRUD
-* [ ] Status
+* [x] Status
 * [ ] Priority
 * [ ] Assignment
 * [ ] Due dates
