@@ -1344,7 +1344,7 @@ Build the project in this order:
 * [x] Task CRUD
 * [x] Status
 * [x] Priority
-* [ ] Assignment
+* [x] Assignment
 * [ ] Due dates
 
 ## Milestone 5 — Collaboration
