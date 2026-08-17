@@ -108,7 +108,7 @@ public class ProjectsController : ControllerBase
 
     [HttpPost("{id}/labels")]
     [Authorize(Policy = ApplicationPermissions.Projects.Update)]
-    [ProducesResponseType(typeof(ProjectLabelSummary), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProjectLabelSummary), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectLabelSummary>> CreateProjectLabel(
@@ -119,7 +119,7 @@ public class ProjectsController : ControllerBase
         var label = await _sender.Send(
             new CreateProjectLabelCommand(id, request.Name, request.Color),
             cancellationToken);
-        return Ok(label);
+        return Created($"/api/projects/{id}/labels", label);
     }
 }
 

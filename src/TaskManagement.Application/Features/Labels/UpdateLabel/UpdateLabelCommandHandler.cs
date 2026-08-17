@@ -45,12 +45,7 @@ public class UpdateLabelCommandHandler : IRequestHandler<UpdateLabelCommand, Pro
 
         if (duplicate)
         {
-            throw new ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure(
-                    nameof(request.Name),
-                    "A label with this name already exists in the project.")
-            });
+            throw new ConflictException("A label with this name already exists in the project.");
         }
 
         label.Name = request.Name;

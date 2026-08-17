@@ -1362,7 +1362,7 @@ Build the project in this order:
 ## Milestone 7 — Production Quality
 
 * [x] Validation
-* [ ] ProblemDetails
+* [x] ProblemDetails
 * [ ] Logging
 * [ ] Unit tests
 * [ ] Integration tests

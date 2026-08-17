@@ -45,12 +45,7 @@ public class CreateProjectLabelCommandHandler : IRequestHandler<CreateProjectLab
 
         if (duplicate)
         {
-            throw new ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure(
-                    nameof(request.Name),
-                    "A label with this name already exists in the project.")
-            });
+            throw new ConflictException("A label with this name already exists in the project.");
         }
 
         var label = new Label

@@ -19,12 +19,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
         var existing = await _identityService.GetUserByEmailAsync(request.Email);
         if (existing is not null)
         {
-            throw new ValidationException(new[]
-            {
-                new ValidationFailure(
-                    nameof(request.Email),
-                    "A user with this email already exists.")
-            });
+            throw new ConflictException("A user with this email already exists.");
         }
 
         var createRequest = new CreateApplicationUserRequest(

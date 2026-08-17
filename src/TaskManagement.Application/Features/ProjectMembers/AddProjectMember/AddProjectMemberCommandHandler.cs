@@ -51,12 +51,7 @@ public class AddProjectMemberCommandHandler : IRequestHandler<AddProjectMemberCo
 
         if (alreadyMember)
         {
-            throw new ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure(
-                    nameof(request.UserId),
-                    "The user is already a member of this project.")
-            });
+            throw new ConflictException("The user is already a member of this project.");
         }
 
         var member = new ProjectMember

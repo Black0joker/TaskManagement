@@ -47,12 +47,7 @@ public class AssignLabelToTaskCommandHandler : IRequestHandler<AssignLabelToTask
 
         if (label.ProjectId != task.ProjectId)
         {
-            throw new ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure(
-                    nameof(request.LabelId),
-                    "The label does not belong to the task's project.")
-            });
+            throw new BusinessRuleException("The label does not belong to the task's project.");
         }
 
         var alreadyAssigned = await _context.TaskItemLabels
