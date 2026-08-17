@@ -1,6 +1,8 @@
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Features.Projects;
 using TaskManagement.Application.Features.Projects.CreateProject;
 using TaskManagement.Application.Features.Projects.DeleteProject;
@@ -69,7 +71,12 @@ public class ProjectsController : ControllerBase
     {
         if (id != command.Id)
         {
-            return BadRequest();
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure(
+                    nameof(command.Id),
+                    "The route id does not match the project id in the request body.")
+            });
         }
 
         var project = await _sender.Send(command, cancellationToken);

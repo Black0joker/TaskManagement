@@ -176,13 +176,13 @@ public class TasksController : ControllerBase
 
     [HttpPost("{id}/labels/{labelId}")]
     [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignLabel(string id, string labelId, CancellationToken cancellationToken)
     {
         await _sender.Send(new AssignLabelToTaskCommand(id, labelId), cancellationToken);
-        return Ok();
+        return Created($"/api/tasks/{id}", (object?)null);
     }
 
     [HttpDelete("{id}/labels/{labelId}")]
