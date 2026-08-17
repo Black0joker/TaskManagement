@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Abstractions.Persistence;
+using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
 
 namespace TaskManagement.Application.Features.Projects.GetProjectTasks;
@@ -8,10 +9,14 @@ namespace TaskManagement.Application.Features.Projects.GetProjectTasks;
 public class GetProjectTasksQueryHandler : IRequestHandler<GetProjectTasksQuery, IReadOnlyList<ProjectTaskSummary>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IProjectAccessService _projectAccess;
 
-    public GetProjectTasksQueryHandler(IApplicationDbContext context)
+    public GetProjectTasksQueryHandler(
+        IApplicationDbContext context,
+        IProjectAccessService projectAccess)
     {
         _context = context;
+        _projectAccess = projectAccess;
     }
 
     public async Task<IReadOnlyList<ProjectTaskSummary>> Handle(GetProjectTasksQuery request, CancellationToken cancellationToken)
@@ -23,6 +28,11 @@ public class GetProjectTasksQueryHandler : IRequestHandler<GetProjectTasksQuery,
         if (!projectExists)
         {
             throw new NotFoundException("Project", request.ProjectId);
+        }
+
+        if (!await _projectAccess.CanReadAsync(request.ProjectId, cancellationToken))
+        {
+            throw new ForbiddenAccessException("You do not have access to this project.");
         }
 
         return await _context.TaskItems

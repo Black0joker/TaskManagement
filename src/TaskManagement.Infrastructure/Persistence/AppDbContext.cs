@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<User>, IApplicationDbContext
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Label> Labels => Set<Label>();
     public DbSet<TaskItemLabel> TaskItemLabels => Set<TaskItemLabel>();
+    public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)

@@ -4,14 +4,14 @@ using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
 
-namespace TaskManagement.Application.Features.Projects.GetProjectLabels;
+namespace TaskManagement.Application.Features.ProjectMembers.GetProjectMembers;
 
-public class GetProjectLabelsQueryHandler : IRequestHandler<GetProjectLabelsQuery, IReadOnlyList<ProjectLabelSummary>>
+public class GetProjectMembersQueryHandler : IRequestHandler<GetProjectMembersQuery, IReadOnlyList<ProjectMemberResponse>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
 
-    public GetProjectLabelsQueryHandler(
+    public GetProjectMembersQueryHandler(
         IApplicationDbContext context,
         IProjectAccessService projectAccess)
     {
@@ -19,7 +19,7 @@ public class GetProjectLabelsQueryHandler : IRequestHandler<GetProjectLabelsQuer
         _projectAccess = projectAccess;
     }
 
-    public async Task<IReadOnlyList<ProjectLabelSummary>> Handle(GetProjectLabelsQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ProjectMemberResponse>> Handle(GetProjectMembersQuery request, CancellationToken cancellationToken)
     {
         var projectExists = await _context.Projects
             .AsNoTracking()
@@ -35,11 +35,17 @@ public class GetProjectLabelsQueryHandler : IRequestHandler<GetProjectLabelsQuer
             throw new ForbiddenAccessException("You do not have access to this project.");
         }
 
-        return await _context.Labels
+        return await _context.ProjectMembers
             .AsNoTracking()
-            .Where(l => l.ProjectId == request.ProjectId)
-            .OrderBy(l => l.Name)
-            .Select(l => new ProjectLabelSummary(l.Id, l.Name, l.Color))
+            .Where(pm => pm.ProjectId == request.ProjectId)
+            .OrderBy(pm => pm.Role)
+            .ThenBy(pm => pm.User.LastName)
+            .Select(pm => new ProjectMemberResponse(
+                pm.UserId,
+                pm.User.Email ?? string.Empty,
+                pm.User.FirstName,
+                pm.User.LastName,
+                pm.Role))
             .ToListAsync(cancellationToken);
     }
 }

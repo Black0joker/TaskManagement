@@ -42,6 +42,36 @@ public class DatabaseSeeder
         var admin = await SeedAdminUserAsync();
         var user = await SeedNormalUserAsync();
         await SeedSampleDataAsync(admin, user);
+        await EnsureProjectMembershipsAsync();
+    }
+
+    /// <summary>
+    /// Backfills Owner membership for projects created before project membership existed.
+    /// </summary>
+    private async System.Threading.Tasks.Task EnsureProjectMembershipsAsync()
+    {
+        var projectsWithoutMembers = await _context.Projects
+            .Where(p => !p.ProjectMembers.Any())
+            .ToListAsync();
+
+        if (projectsWithoutMembers.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var project in projectsWithoutMembers)
+        {
+            _context.ProjectMembers.Add(new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = project.CreatedById,
+                Role = ProjectMemberRole.Owner
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Backfilled Owner membership for {Count} project(s).", projectsWithoutMembers.Count);
     }
 
     private async System.Threading.Tasks.Task SeedRolesAsync()
@@ -192,6 +222,9 @@ public class DatabaseSeeder
 
         _context.Projects.Add(project);
         _context.Labels.AddRange(labels);
+        _context.ProjectMembers.AddRange(
+            new ProjectMember { ProjectId = project.Id, UserId = admin.Id, Role = ProjectMemberRole.Owner },
+            new ProjectMember { ProjectId = project.Id, UserId = user.Id, Role = ProjectMemberRole.Member });
 
         await _context.SaveChangesAsync();
 

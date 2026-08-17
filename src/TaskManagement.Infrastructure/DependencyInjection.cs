@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Identity;
 using TaskManagement.Application.Abstractions.Persistence;
+using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Models;
 using TaskManagement.Domain.Authorization;
 using TaskManagement.Domain.Entities;
@@ -16,6 +17,7 @@ using TaskManagement.Infrastructure.Authentication;
 using TaskManagement.Infrastructure.Authorization;
 using TaskManagement.Infrastructure.Identity;
 using TaskManagement.Infrastructure.Persistence;
+using TaskManagement.Infrastructure.Projects;
 
 namespace TaskManagement.Infrastructure;
 
@@ -42,6 +44,7 @@ public static class DependencyInjection
 
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
         services.AddScoped<DatabaseSeeder>();
 

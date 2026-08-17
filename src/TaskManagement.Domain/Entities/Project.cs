@@ -13,4 +13,5 @@ public class Project : BaseAuditableEntity
     // Navigation properties
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     public ICollection<Label> Labels { get; set; } = new List<Label>();
+    public ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
 }

@@ -1336,8 +1336,8 @@ Build the project in this order:
 ## Milestone 3 — Projects
 
 * [x] Project CRUD (Phase 8)
-* [ ] Project members (Phase 9)
-* [x] Project authorization (Phases 7–8)
+* [x] Project members (Phase 9)
+* [x] Project authorization (Phases 7–9)
 
 ## Milestone 4 — Tasks
 

@@ -3,6 +3,7 @@ using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Domain.Entities;
+using TaskManagement.Domain.Enums;
 
 namespace TaskManagement.Application.Features.Projects.CreateProject;
 
@@ -34,6 +35,15 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         };
 
         _context.Projects.Add(project);
+
+        // The creator becomes the project Owner.
+        _context.ProjectMembers.Add(new ProjectMember
+        {
+            ProjectId = project.Id,
+            UserId = _currentUserService.UserId,
+            Role = ProjectMemberRole.Owner
+        });
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return new ProjectResponse(
