@@ -1355,7 +1355,7 @@ Build the project in this order:
 ## Milestone 6 — Querying
 
 * [x] Pagination
-* [ ] Filtering
+* [x] Filtering
 * [ ] Sorting
 * [ ] Searching
 

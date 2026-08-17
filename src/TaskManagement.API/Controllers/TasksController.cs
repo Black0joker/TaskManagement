@@ -46,10 +46,31 @@ public class TasksController : ControllerBase
         [FromQuery] DateTime? dueAfter = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = PaginationParameters.DefaultPageSize,
+        [FromQuery] TaskItemStatus? status = null,
+        [FromQuery] TaskItemPriority? priority = null,
+        [FromQuery] string? assignedToId = null,
+        [FromQuery] string? labelId = null,
+        [FromQuery] DateTime? dueFrom = null,
+        [FromQuery] DateTime? dueTo = null,
         CancellationToken cancellationToken = default)
     {
         var tasks = await _sender.Send(
-            new ListTasksQuery(projectId, overdue, dueToday, dueThisWeek, noDueDate, dueBefore, dueAfter, page, pageSize),
+            new ListTasksQuery(
+                projectId,
+                overdue,
+                dueToday,
+                dueThisWeek,
+                noDueDate,
+                dueBefore,
+                dueAfter,
+                page,
+                pageSize,
+                status,
+                priority,
+                assignedToId,
+                labelId,
+                dueFrom,
+                dueTo),
             cancellationToken);
         return Ok(tasks);
     }

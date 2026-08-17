@@ -67,6 +67,26 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
 
         query = ApplyDueDateFilters(query, request);
 
+        if (request.Status.HasValue)
+        {
+            query = query.Where(t => t.Status == request.Status.Value);
+        }
+
+        if (request.Priority.HasValue)
+        {
+            query = query.Where(t => t.Priority == request.Priority.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AssignedToId))
+        {
+            query = query.Where(t => t.AssignedToId == request.AssignedToId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.LabelId))
+        {
+            query = query.Where(t => t.TaskItemLabels.Any(tl => tl.LabelId == request.LabelId));
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
@@ -137,6 +157,18 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
         {
             var dueAfter = request.DueAfter.Value;
             query = query.Where(t => t.DueDate != null && t.DueDate.Value > dueAfter);
+        }
+
+        if (request.DueFrom.HasValue)
+        {
+            var dueFrom = request.DueFrom.Value;
+            query = query.Where(t => t.DueDate != null && t.DueDate.Value >= dueFrom);
+        }
+
+        if (request.DueTo.HasValue)
+        {
+            var dueTo = request.DueTo.Value;
+            query = query.Where(t => t.DueDate != null && t.DueDate.Value <= dueTo);
         }
 
         return query;
