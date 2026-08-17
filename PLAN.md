@@ -1083,18 +1083,18 @@ Before considering the API production-ready:
 
 Implement:
 
-* JWT authentication
-* Authorization policies
-* Password hashing through Identity
-* Rate limiting
-* CORS configuration
-* HTTPS
-* Input validation
-* SQL injection protection through EF Core
-* Secure refresh tokens
-* Proper secret management
-* Production-safe error responses
-* Request size limits
+* [x] JWT authentication (Phase 5)
+* [x] Authorization policies (Phase 7)
+* [x] Password hashing through Identity (Phase 5)
+* [x] Rate limiting (Phase 30: global fixed window + strict auth limiter with 429 ProblemDetails)
+* [x] CORS configuration (Phase 30: configurable allowed origins, deny-by-default)
+* [x] HTTPS (Phase 2: HTTPS redirection)
+* [x] Input validation (Phases 24-25: FluentValidation)
+* [x] SQL injection protection through EF Core (all data access parameterized)
+* [x] Secure refresh tokens (Phase 26: hashed at rest, rotation, revocation)
+* [x] Proper secret management (Phase 30: no secrets in source; production requires secure config; dev generates ephemeral key)
+* [x] Production-safe error responses (Phase 3: ProblemDetails without internals)
+* [x] Request size limits (Phase 30: Kestrel 1 MB max request body)
 
 Never store JWT signing secrets directly in source code.
 
@@ -1366,7 +1366,7 @@ Build the project in this order:
 * [ ] Logging
 * [x] Unit tests (Phase 27)
 * [x] Integration tests (Phase 27)
-* [ ] Security
+* [x] Security (Phase 30)
 * [ ] Docker
 * [ ] CI/CD
 

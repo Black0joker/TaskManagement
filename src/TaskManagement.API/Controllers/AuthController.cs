@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskManagement.Application.Features.Authentication;
 using TaskManagement.Application.Features.Authentication.Login;
 using TaskManagement.Application.Features.Authentication.Logout;
@@ -10,6 +11,7 @@ namespace TaskManagement.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly ISender _sender;

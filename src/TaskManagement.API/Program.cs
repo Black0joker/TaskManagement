@@ -1,5 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using TaskManagement.API.Middleware;
@@ -18,6 +19,30 @@ builder.Logging.AddJsonConsole(options =>
     options.UseUtcTimestamp = true;
     options.TimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
     options.IncludeScopes = true;
+});
+
+// Secret management: the JWT signing key is never stored in source code.
+// Production requires it from a secure source; development generates a
+// random ephemeral key when none is supplied (user-secrets / env vars).
+if (builder.Environment.IsProduction() &&
+    string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:Secret"]))
+{
+    throw new InvalidOperationException(
+        "JwtSettings:Secret must be provided through a secure configuration source " +
+        "(environment variable, user secrets or a key vault).");
+}
+
+if (builder.Environment.IsDevelopment() &&
+    string.IsNullOrWhiteSpace(builder.Configuration["JwtSettings:Secret"]))
+{
+    builder.Configuration["JwtSettings:Secret"] = Convert.ToBase64String(
+        System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+}
+
+// Request size limit: this API only accepts small JSON payloads.
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 1_000_000;
 });
 
 // Add services to the container.
@@ -81,6 +106,72 @@ builder.Services.AddControllers()
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+// Rate limiting: a generous global window plus a strict limiter for the
+// authentication endpoints to slow down brute-force attempts.
+// Disabled in the Testing environment so integration tests are not throttled.
+var rateLimitingEnabled = !builder.Environment.IsEnvironment("Testing");
+
+if (rateLimitingEnabled)
+{
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.Headers.RetryAfter = "60";
+
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                new Microsoft.AspNetCore.Mvc.ProblemDetails
+                {
+                    Type = "https://tools.ietf.org/html/rfc9110#section-15.5.20",
+                    Title = "Too Many Requests",
+                    Detail = "Too many requests. Please try again later.",
+                    Status = StatusCodes.Status429TooManyRequests
+                },
+                (System.Text.Json.JsonSerializerOptions?)null,
+                "application/problem+json",
+                cancellationToken);
+        };
+
+        options.GlobalLimiter = System.Threading.RateLimiting.PartitionedRateLimiter
+            .Create<HttpContext, string>(context =>
+                System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                    _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 300,
+                        Window = TimeSpan.FromMinutes(1)
+                    }));
+
+        options.AddFixedWindowLimiter("auth", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = 5;
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueLimit = 0;
+        });
+    });
+}
+
+// CORS: allowed origins come from configuration so they can differ per
+// environment. Without configured origins no cross-origin access is granted.
+builder.Services.AddCors(corsOptions =>
+{
+    corsOptions.AddPolicy("Default", policy =>
+    {
+        var origins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? [];
+
+        if (origins.Length > 0)
+        {
+            policy.WithOrigins(origins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
+
 // Authentication and authorization.
 // Authorization policies are registered by Infrastructure.AddInfrastructureServices.
 builder.Services.AddHttpContextAccessor();
@@ -122,6 +213,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+if (rateLimitingEnabled)
+{
+    app.UseRateLimiter();
+}
+
+app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();
