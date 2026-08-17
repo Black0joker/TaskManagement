@@ -3,16 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
-using TaskManagement.Domain.Rules;
 
-namespace TaskManagement.Application.Features.Tasks.UpdateTaskStatus;
+namespace TaskManagement.Application.Features.Tasks.UpdateTaskPriority;
 
-public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCommand, TaskResponse>
+public class UpdateTaskPriorityCommandHandler : IRequestHandler<UpdateTaskPriorityCommand, TaskResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IProjectAccessService _projectAccess;
 
-    public UpdateTaskStatusCommandHandler(
+    public UpdateTaskPriorityCommandHandler(
         IApplicationDbContext context,
         IProjectAccessService projectAccess)
     {
@@ -20,7 +19,7 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
         _projectAccess = projectAccess;
     }
 
-    public async Task<TaskResponse> Handle(UpdateTaskStatusCommand request, CancellationToken cancellationToken)
+    public async Task<TaskResponse> Handle(UpdateTaskPriorityCommand request, CancellationToken cancellationToken)
     {
         var task = await _context.TaskItems
             .FirstOrDefaultAsync(t => t.Id == request.Id, cancellationToken);
@@ -35,27 +34,8 @@ public class UpdateTaskStatusCommandHandler : IRequestHandler<UpdateTaskStatusCo
             throw new ForbiddenAccessException("Only project owners, admins and members can modify tasks.");
         }
 
-        var newStatus = request.Status!.Value;
-
-        if (TaskStatusTransitions.IsSame(task.Status, newStatus))
-        {
-            throw new ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure(
-                    nameof(request.Status),
-                    $"The task is already in status '{newStatus}'.")
-            });
-        }
-
-        // Moving work backwards (rework, reopening, resurrecting a cancelled
-        // task, or cancelling completed work) is a governance action.
-        if (TaskStatusTransitions.IsBackward(task.Status, newStatus) &&
-            !await _projectAccess.CanManageAsync(task.ProjectId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only project owners and admins can move a task backwards.");
-        }
-
-        task.Status = newStatus;
+        // Setting the same priority is a harmless no-op (idempotent PATCH).
+        task.Priority = request.Priority!.Value;
         await _context.SaveChangesAsync(cancellationToken);
 
         return new TaskResponse(

@@ -1343,7 +1343,7 @@ Build the project in this order:
 
 * [x] Task CRUD
 * [x] Status
-* [ ] Priority
+* [x] Priority
 * [ ] Assignment
 * [ ] Due dates
 

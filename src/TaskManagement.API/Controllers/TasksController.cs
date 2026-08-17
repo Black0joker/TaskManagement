@@ -7,6 +7,7 @@ using TaskManagement.Application.Features.Tasks.DeleteTask;
 using TaskManagement.Application.Features.Tasks.GetTask;
 using TaskManagement.Application.Features.Tasks.ListTasks;
 using TaskManagement.Application.Features.Tasks.UpdateTask;
+using TaskManagement.Application.Features.Tasks.UpdateTaskPriority;
 using TaskManagement.Application.Features.Tasks.UpdateTaskStatus;
 using TaskManagement.Domain.Authorization;
 using TaskManagement.Domain.Enums;
@@ -99,6 +100,21 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    [HttpPatch("{id}/priority")]
+    [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
+    [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskResponse>> UpdateTaskPriority(
+        string id,
+        [FromBody] UpdateTaskPriorityRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateTaskPriorityCommand(id, request.Priority);
+        var task = await _sender.Send(command, cancellationToken);
+        return Ok(task);
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Policy = ApplicationPermissions.Tasks.Delete)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -120,4 +136,6 @@ public sealed record UpdateTaskRequest(
     string? AssignedToId,
     DateTime? DueDate);
 
-public sealed record UpdateTaskStatusRequest(TaskItemStatus Status);
+public sealed record UpdateTaskStatusRequest(TaskItemStatus? Status);
+
+public sealed record UpdateTaskPriorityRequest(TaskItemPriority? Priority);
