@@ -68,6 +68,11 @@ public class TaskWorkflowIntegrationTests : IClassFixture<TaskManagementApiFacto
             new { userId = ownerId }, memberToken, HttpStatusCode.OK);
         Assert.Equal("Owner User", (string?)assigned!["assignedTo"]!["name"]);
 
+        // Member sets a due date via the dedicated PATCH endpoint.
+        var dueDateChanged = await PatchJsonAsync($"/api/tasks/{taskId}/due-date",
+            new { dueDate = DateTime.UtcNow.AddDays(7).ToString("yyyy-MM-dd") }, memberToken, HttpStatusCode.OK);
+        Assert.NotNull(dueDateChanged!["dueDate"]);
+
         // Owner creates a label and attaches it to the task.
         var label = await PostJsonAsync($"/api/projects/{projectId}/labels",
             new { name = "Bug", color = "#EF4444" }, ownerToken, HttpStatusCode.Created);

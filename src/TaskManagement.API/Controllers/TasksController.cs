@@ -14,6 +14,7 @@ using TaskManagement.Application.Features.Tasks.ListTasks;
 using TaskManagement.Application.Features.Tasks.RemoveLabelFromTask;
 using TaskManagement.Application.Features.Tasks.UpdateTask;
 using TaskManagement.Application.Features.Tasks.UpdateTaskAssignee;
+using TaskManagement.Application.Features.Tasks.UpdateTaskDueDate;
 using TaskManagement.Application.Features.Tasks.UpdateTaskPriority;
 using TaskManagement.Application.Features.Tasks.UpdateTaskStatus;
 using TaskManagement.Domain.Authorization;
@@ -176,6 +177,22 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    [HttpPatch("{id}/due-date")]
+    [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
+    [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<TaskResponse>> UpdateTaskDueDate(
+        string id,
+        [FromBody] UpdateTaskDueDateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateTaskDueDateCommand(id, request.DueDate);
+        var task = await _sender.Send(command, cancellationToken);
+        return Ok(task);
+    }
+
     [HttpPost("{id}/labels/{labelId}")]
     [Authorize(Policy = ApplicationPermissions.Tasks.Update)]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -255,6 +272,8 @@ public sealed record UpdateTaskStatusRequest(TaskItemStatus? Status);
 public sealed record UpdateTaskPriorityRequest(TaskItemPriority? Priority);
 
 public sealed record UpdateTaskAssigneeRequest(string? UserId);
+
+public sealed record UpdateTaskDueDateRequest(DateTime? DueDate);
 
 public sealed record CreateCommentRequest(string Content);
 
