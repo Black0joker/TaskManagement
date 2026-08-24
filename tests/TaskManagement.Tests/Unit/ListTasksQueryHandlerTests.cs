@@ -174,4 +174,65 @@ public class ListTasksQueryHandlerTests : HandlerTestBase
         await Assert.ThrowsAsync<NotFoundException>(() =>
             _handler.Handle(new ListTasksQuery("project-1"), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task Handle_SortsByTitle()
+    {
+        var userId = await SeedMemberWithProjectAsync();
+        await AddTaskAsync("t-b", "project-1", userId, title: "Beta task");
+        await AddTaskAsync("t-a", "project-1", userId, title: "Alpha task");
+        await AddTaskAsync("t-c", "project-1", userId, title: "Gamma task");
+
+        var ascending = await _handler.Handle(
+            new ListTasksQuery("project-1", SortBy: "title"), CancellationToken.None);
+
+        Assert.Equal(new[] { "t-a", "t-b", "t-c" }, ascending.Items.Select(t => t.Id).ToArray());
+
+        var descending = await _handler.Handle(
+            new ListTasksQuery("project-1", SortBy: "title", SortDirection: "desc"), CancellationToken.None);
+
+        Assert.Equal(new[] { "t-c", "t-b", "t-a" }, descending.Items.Select(t => t.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task Handle_SortsByStatus_FollowsWorkflowOrder()
+    {
+        var userId = await SeedMemberWithProjectAsync();
+        await AddTaskAsync("t-done", "project-1", userId, status: TaskItemStatus.Done);
+        await AddTaskAsync("t-todo", "project-1", userId, status: TaskItemStatus.Todo);
+        await AddTaskAsync("t-cancelled", "project-1", userId, status: TaskItemStatus.Cancelled);
+        await AddTaskAsync("t-review", "project-1", userId, status: TaskItemStatus.InReview);
+        await AddTaskAsync("t-progress", "project-1", userId, status: TaskItemStatus.InProgress);
+
+        var ascending = await _handler.Handle(
+            new ListTasksQuery("project-1", SortBy: "status"), CancellationToken.None);
+
+        Assert.Equal(
+            new[] { "t-todo", "t-progress", "t-review", "t-done", "t-cancelled" },
+            ascending.Items.Select(t => t.Id).ToArray());
+
+        var descending = await _handler.Handle(
+            new ListTasksQuery("project-1", SortBy: "status", SortDirection: "desc"), CancellationToken.None);
+
+        Assert.Equal(
+            new[] { "t-cancelled", "t-done", "t-review", "t-progress", "t-todo" },
+            descending.Items.Select(t => t.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task Handle_SortsByPriorityAscending_FollowsPriorityLevels()
+    {
+        var userId = await SeedMemberWithProjectAsync();
+        await AddTaskAsync("t-low", "project-1", userId, priority: TaskItemPriority.Low);
+        await AddTaskAsync("t-critical", "project-1", userId, priority: TaskItemPriority.Critical);
+        await AddTaskAsync("t-medium", "project-1", userId, priority: TaskItemPriority.Medium);
+        await AddTaskAsync("t-high", "project-1", userId, priority: TaskItemPriority.High);
+
+        var ascending = await _handler.Handle(
+            new ListTasksQuery("project-1", SortBy: "priority"), CancellationToken.None);
+
+        Assert.Equal(
+            new[] { "t-low", "t-medium", "t-high", "t-critical" },
+            ascending.Items.Select(t => t.Id).ToArray());
+    }
 }

@@ -4,7 +4,7 @@ namespace TaskManagement.Application.Features.Tasks.ListTasks;
 
 public class ListTasksQueryValidator : AbstractValidator<ListTasksQuery>
 {
-    public static readonly string[] SortableProperties = ["createdAt", "dueDate", "priority"];
+    public static readonly string[] SortableProperties = ["title", "status", "priority", "dueDate", "createdAt"];
     private static readonly string[] SortDirections = ["asc", "desc"];
 
     public ListTasksQueryValidator()

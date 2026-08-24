@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Abstractions.Authentication;
@@ -133,12 +134,30 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
         // Whitelisted properties only — client input is never injected into the query.
         return request.SortBy.Trim().ToLowerInvariant() switch
         {
-            "createdat" => descending ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt),
-            "duedate" => descending ? query.OrderByDescending(t => t.DueDate) : query.OrderBy(t => t.DueDate),
-            "priority" => descending ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority),
+            "title" => Order(query, t => t.Title, descending),
+            // Status and priority are stored as strings; explicit ranks keep the
+            // sort in workflow / priority-level order on every database provider
+            // instead of alphabetical string ordering.
+            "status" => Order(query, t =>
+                t.Status == TaskItemStatus.Todo ? 0 :
+                t.Status == TaskItemStatus.InProgress ? 1 :
+                t.Status == TaskItemStatus.InReview ? 2 :
+                t.Status == TaskItemStatus.Done ? 3 : 4, descending),
+            "priority" => Order(query, t =>
+                t.Priority == TaskItemPriority.Low ? 0 :
+                t.Priority == TaskItemPriority.Medium ? 1 :
+                t.Priority == TaskItemPriority.High ? 2 : 3, descending),
+            "duedate" => Order(query, t => t.DueDate, descending),
+            "createdat" => Order(query, t => t.CreatedAt, descending),
             _ => query.OrderByDescending(t => t.CreatedAt)
         };
     }
+
+    private static IQueryable<Domain.Entities.TaskItem> Order<TKey>(
+        IQueryable<Domain.Entities.TaskItem> query,
+        Expression<Func<Domain.Entities.TaskItem, TKey>> keySelector,
+        bool descending) =>
+        descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
 
     private static IQueryable<Domain.Entities.TaskItem> ApplyDueDateFilters(
         IQueryable<Domain.Entities.TaskItem> query,
