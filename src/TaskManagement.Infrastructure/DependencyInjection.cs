@@ -46,6 +46,10 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
+        // Background cleanup of expired/revoked refresh tokens to prevent
+        // unbounded growth of the RefreshTokens table.
+        services.AddHostedService<RefreshTokenCleanupService>();
+
         services.AddScoped<DatabaseSeeder>();
 
         return services;
