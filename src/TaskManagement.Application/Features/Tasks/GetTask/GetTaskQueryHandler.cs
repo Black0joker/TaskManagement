@@ -43,14 +43,11 @@ public class GetTaskQueryHandler : IRequestHandler<GetTaskQuery, TaskDetailsResp
                     .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (task is null)
+        // The same 404 is returned whether the task does not exist or the user
+        // cannot read it, so a task ID's existence cannot be probed.
+        if (task is null || !await _projectAccess.CanReadAsync(task.ProjectId, cancellationToken))
         {
             throw new NotFoundException("Task", request.Id);
-        }
-
-        if (!await _projectAccess.CanReadAsync(task.ProjectId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("You do not have access to this task.");
         }
 
         return task;

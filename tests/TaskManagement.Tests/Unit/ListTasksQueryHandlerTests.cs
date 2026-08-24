@@ -161,7 +161,7 @@ public class ListTasksQueryHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_ThrowsForbidden_WhenUserCannotReadFilteredProject()
+    public async Task Handle_ThrowsNotFound_WhenUserCannotReadFilteredProject()
     {
         await SeedMemberWithProjectAsync();
         var outsider = await AddUserAsync("outsider-1", "Out", "Sider");
@@ -169,7 +169,9 @@ public class ListTasksQueryHandlerTests : HandlerTestBase
         await AddMemberAsync("project-2", outsider.Id, ProjectMemberRole.Owner);
         CurrentUser.UserId = outsider.Id;
 
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+        // 404 instead of 403: an inaccessible project must be indistinguishable
+        // from a missing one so project IDs cannot be enumerated.
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             _handler.Handle(new ListTasksQuery("project-1"), CancellationToken.None));
     }
 }

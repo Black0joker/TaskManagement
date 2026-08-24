@@ -25,14 +25,11 @@ public class GetProjectMembersQueryHandler : IRequestHandler<GetProjectMembersQu
             .AsNoTracking()
             .AnyAsync(p => p.Id == request.ProjectId, cancellationToken);
 
-        if (!projectExists)
+        // The same 404 is returned whether the project does not exist or the
+        // user cannot read it, so a project ID's existence cannot be probed.
+        if (!projectExists || !await _projectAccess.CanReadAsync(request.ProjectId, cancellationToken))
         {
             throw new NotFoundException("Project", request.ProjectId);
-        }
-
-        if (!await _projectAccess.CanReadAsync(request.ProjectId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("You do not have access to this project.");
         }
 
         return await _context.ProjectMembers

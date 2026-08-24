@@ -33,14 +33,11 @@ public class GetProjectQueryHandler : IRequestHandler<GetProjectQuery, ProjectRe
                 p.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (project is null)
+        // The same 404 is returned whether the project does not exist or the
+        // user cannot read it, so a project ID's existence cannot be probed.
+        if (project is null || !await _projectAccess.CanReadAsync(request.Id, cancellationToken))
         {
             throw new NotFoundException("Project", request.Id);
-        }
-
-        if (!await _projectAccess.CanReadAsync(request.Id, cancellationToken))
-        {
-            throw new ForbiddenAccessException("You do not have access to this project.");
         }
 
         return project;
