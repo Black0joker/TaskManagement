@@ -13,10 +13,12 @@ namespace TaskManagement.Tests.Unit.Testing;
 /// </summary>
 public abstract class HandlerTestBase : IDisposable
 {
+    private readonly string _databaseName = $"unit-{Guid.NewGuid():N}";
+
     protected HandlerTestBase()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase($"unit-{Guid.NewGuid():N}")
+            .UseInMemoryDatabase(_databaseName)
             .Options;
 
         Context = new AppDbContext(options);
@@ -27,6 +29,15 @@ public abstract class HandlerTestBase : IDisposable
     protected AppDbContext Context { get; }
     protected StubCurrentUserService CurrentUser { get; }
     protected ProjectAccessService ProjectAccess { get; }
+
+    /// <summary>
+    /// Creates a second context over the same in-memory database so tests can
+    /// simulate concurrent writers for optimistic-concurrency scenarios.
+    /// </summary>
+    protected AppDbContext CreateParallelContext() =>
+        new(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(_databaseName)
+            .Options);
 
     protected async Task<User> AddUserAsync(string id, string firstName = "Test", string lastName = "User")
     {

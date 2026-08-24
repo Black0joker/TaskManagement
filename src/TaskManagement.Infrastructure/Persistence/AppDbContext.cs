@@ -25,10 +25,37 @@ public class AppDbContext : IdentityDbContext<User>, IApplicationDbContext
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Optimistic concurrency: every versioned entity carries a token that
+        // EF includes in the WHERE clause of UPDATE/DELETE statements. Stale
+        // writes affect no rows and surface as DbUpdateConcurrencyException
+        // (mapped to HTTP 409) instead of silently overwriting newer data.
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            if (typeof(IVersioned).IsAssignableFrom(entityType.ClrType))
+            {
+                var versionProperty = entityType.FindProperty(nameof(IVersioned.Version));
+                if (versionProperty is not null)
+                {
+                    versionProperty.IsConcurrencyToken = true;
+                }
+            }
+        }
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Bump the optimistic-concurrency token on every modified entity so a
+        // concurrent writer holding the old token fails instead of being
+        // silently overwritten.
+        foreach (var entry in ChangeTracker.Entries<IVersioned>())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.Version++;
+            }
+        }
+
         var now = DateTime.UtcNow;
 
         foreach (var entry in ChangeTracker.Entries<BaseAuditableEntity>())

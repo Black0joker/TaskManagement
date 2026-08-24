@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Exceptions;
 
 namespace TaskManagement.API.Middleware;
@@ -73,6 +74,14 @@ public class ExceptionHandlingMiddleware
             case ConflictException conflictException:
                 statusCode = StatusCodes.Status409Conflict;
                 responseBody = CreateProblemDetails(statusCode, "Conflict", conflictException.Message);
+                break;
+
+            case DbUpdateConcurrencyException:
+                statusCode = StatusCodes.Status409Conflict;
+                responseBody = CreateProblemDetails(
+                    statusCode,
+                    "Conflict",
+                    "The resource was modified by another request. Reload it and try again.");
                 break;
 
             case BusinessRuleException businessRuleException:
