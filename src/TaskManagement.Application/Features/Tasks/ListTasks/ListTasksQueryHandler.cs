@@ -80,6 +80,11 @@ public class ListTasksQueryHandler : IRequestHandler<ListTasksQuery, PagedResult
             query = query.Where(t => t.AssignedToId == request.AssignedToId);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.CreatedById))
+        {
+            query = query.Where(t => t.CreatedById == request.CreatedById);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.LabelId))
         {
             query = query.Where(t => t.TaskItemLabels.Any(tl => tl.LabelId == request.LabelId));

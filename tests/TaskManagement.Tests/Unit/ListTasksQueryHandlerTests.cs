@@ -235,4 +235,22 @@ public class ListTasksQueryHandlerTests : HandlerTestBase
             new[] { "t-low", "t-medium", "t-high", "t-critical" },
             ascending.Items.Select(t => t.Id).ToArray());
     }
+
+    [Fact]
+    public async Task Handle_FiltersByCreatedById()
+    {
+        var owner = await AddUserAsync("owner-1");
+        var member = await AddUserAsync("member-1", "Mem", "Ber");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        await AddMemberAsync("project-1", member.Id, ProjectMemberRole.Member);
+        await AddTaskAsync("t-owner", "project-1", owner.Id, title: "Created by owner");
+        await AddTaskAsync("t-member", "project-1", member.Id, title: "Created by member");
+        CurrentUser.UserId = owner.Id;
+
+        var result = await _handler.Handle(
+            new ListTasksQuery("project-1", CreatedById: member.Id), CancellationToken.None);
+
+        Assert.Equal("t-member", Assert.Single(result.Items).Id);
+    }
 }

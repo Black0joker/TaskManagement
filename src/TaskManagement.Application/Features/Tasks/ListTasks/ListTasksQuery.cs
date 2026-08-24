@@ -17,6 +17,7 @@ public sealed record ListTasksQuery(
     TaskItemStatus? Status = null,
     TaskItemPriority? Priority = null,
     string? AssignedToId = null,
+    string? CreatedById = null,
     string? LabelId = null,
     DateTime? DueFrom = null,
     DateTime? DueTo = null,
