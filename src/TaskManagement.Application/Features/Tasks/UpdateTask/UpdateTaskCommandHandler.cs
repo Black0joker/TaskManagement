@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Domain.Enums;
+using TaskManagement.Domain.Rules;
 
 namespace TaskManagement.Application.Features.Tasks.UpdateTask;
 
@@ -32,6 +34,50 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskR
         if (!await _projectAccess.CanContributeAsync(task.ProjectId, cancellationToken))
         {
             throw new ForbiddenAccessException("Only project owners, admins and members can modify tasks.");
+        }
+
+        // Done tasks are immutable for status, priority, assignee and due date.
+        if (task.Status == TaskItemStatus.Done)
+        {
+            var attemptsChange = request.Status != task.Status
+                || request.Priority != task.Priority
+                || !string.Equals(
+                    string.IsNullOrWhiteSpace(request.AssignedToId) ? null : request.AssignedToId,
+                    task.AssignedToId,
+                    StringComparison.Ordinal)
+                || request.DueDate != task.DueDate;
+
+            if (attemptsChange)
+            {
+                throw new BusinessRuleException(
+                    "Completed tasks are immutable. Status, priority, assignee and due date cannot be modified.");
+            }
+        }
+
+        // Enforce status workflow governance when the status is being changed.
+        if (request.Status != task.Status)
+        {
+            // Backward transitions (rework, reopen, resurrect, cancel completed
+            // work) require project Owner/Admin.
+            if (TaskStatusTransitions.IsBackward(task.Status, request.Status) &&
+                !await _projectAccess.CanManageAsync(task.ProjectId, cancellationToken))
+            {
+                throw new ForbiddenAccessException(
+                    "Only project owners and admins can move a task backwards.");
+            }
+
+            // Unassigned tasks cannot enter InProgress.
+            var effectiveAssignee = string.IsNullOrWhiteSpace(request.AssignedToId)
+                ? null
+                : request.AssignedToId;
+
+            if (request.Status == TaskItemStatus.InProgress &&
+                effectiveAssignee is null &&
+                task.AssignedToId is null)
+            {
+                throw new BusinessRuleException(
+                    "A task must be assigned before it can be moved to InProgress.");
+            }
         }
 
         var assignedToId = string.IsNullOrWhiteSpace(request.AssignedToId) ? null : request.AssignedToId;
