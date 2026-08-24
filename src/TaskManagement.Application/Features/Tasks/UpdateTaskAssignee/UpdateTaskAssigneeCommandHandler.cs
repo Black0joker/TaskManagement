@@ -5,6 +5,7 @@ using TaskManagement.Application.Abstractions.Authentication;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Domain.Enums;
 
 namespace TaskManagement.Application.Features.Tasks.UpdateTaskAssignee;
 
@@ -40,6 +41,12 @@ public class UpdateTaskAssigneeCommandHandler : IRequestHandler<UpdateTaskAssign
         if (!await _projectAccess.CanContributeAsync(task.ProjectId, cancellationToken))
         {
             throw new ForbiddenAccessException("Only project owners, admins and members can modify tasks.");
+        }
+
+        if (task.Status == TaskItemStatus.Done)
+        {
+            throw new BusinessRuleException(
+                "Completed tasks are immutable. Assignee cannot be modified.");
         }
 
         var userId = string.IsNullOrWhiteSpace(request.UserId) ? null : request.UserId;

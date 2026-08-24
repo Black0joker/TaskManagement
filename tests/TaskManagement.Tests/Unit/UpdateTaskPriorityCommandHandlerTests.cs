@@ -74,4 +74,19 @@ public class UpdateTaskPriorityCommandHandlerTests : HandlerTestBase
             new UpdateTaskPriorityCommand(task.Id, TaskItemPriority.Critical),
             CancellationToken.None));
     }
+
+    [Fact]
+    public async Task Handle_ThrowsBusinessRule_WhenTaskIsDone()
+    {
+        var owner = await AddUserAsync("owner-1");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id,
+            status: TaskItemStatus.Done, priority: TaskItemPriority.Medium);
+        CurrentUser.UserId = owner.Id;
+
+        await Assert.ThrowsAsync<BusinessRuleException>(() => _handler.Handle(
+            new UpdateTaskPriorityCommand(task.Id, TaskItemPriority.Critical),
+            CancellationToken.None));
+    }
 }

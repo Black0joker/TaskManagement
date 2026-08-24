@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Abstractions.Persistence;
 using TaskManagement.Application.Abstractions.Projects;
 using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Domain.Enums;
 
 namespace TaskManagement.Application.Features.Tasks.UpdateTaskPriority;
 
@@ -32,6 +33,12 @@ public class UpdateTaskPriorityCommandHandler : IRequestHandler<UpdateTaskPriori
         if (!await _projectAccess.CanContributeAsync(task.ProjectId, cancellationToken))
         {
             throw new ForbiddenAccessException("Only project owners, admins and members can modify tasks.");
+        }
+
+        if (task.Status == TaskItemStatus.Done)
+        {
+            throw new BusinessRuleException(
+                "Completed tasks are immutable. Priority cannot be modified.");
         }
 
         // Setting the same priority is a harmless no-op (idempotent PATCH).
