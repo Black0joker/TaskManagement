@@ -37,6 +37,8 @@ public class CreateProjectLabelCommandHandler : IRequestHandler<CreateProjectLab
             throw new ForbiddenAccessException("Only project owners and admins can manage labels.");
         }
 
+        //it might be a race codition her.
+
         var duplicate = await _context.Labels
             .AsNoTracking()
             .AnyAsync(

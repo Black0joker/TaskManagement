@@ -40,6 +40,8 @@ public class GetTaskCommentsQueryHandler : IRequestHandler<GetTaskCommentsQuery,
             .AsNoTracking()
             .Where(c => c.TaskItemId == task.Id);
 
+        //you can add another column in TaskItems table for the count of the comments instead of making an index scan to count the comments
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var page = request.Pagination.NormalizedPage;
