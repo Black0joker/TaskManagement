@@ -72,11 +72,12 @@ public class UpdateTaskCommandHandlerTests : HandlerTestBase
         var outsider = await AddUserAsync("outsider-1", "Out", "Sider");
         await AddProjectAsync("project-1", owner.Id);
         await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
-        var task = await AddTaskAsync("task-1", "project-1", owner.Id);
+        var dueDate = DateTime.UtcNow.AddDays(5);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id, dueDate: dueDate);
         CurrentUser.UserId = owner.Id;
 
         await Assert.ThrowsAsync<ValidationException>(() => _handler.Handle(new UpdateTaskCommand(
-            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Low, outsider.Id, null),
+            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Low, outsider.Id, dueDate),
             CancellationToken.None));
     }
 
@@ -88,11 +89,12 @@ public class UpdateTaskCommandHandlerTests : HandlerTestBase
         await AddProjectAsync("project-1", owner.Id);
         await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
         await AddMemberAsync("project-1", member.Id, ProjectMemberRole.Member);
-        var task = await AddTaskAsync("task-1", "project-1", owner.Id, assignedToId: member.Id);
+        var dueDate = DateTime.UtcNow.AddDays(5);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id, assignedToId: member.Id, dueDate: dueDate);
         CurrentUser.UserId = owner.Id;
 
         var result = await _handler.Handle(new UpdateTaskCommand(
-            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Medium, "   ", null),
+            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Medium, "   ", dueDate),
             CancellationToken.None);
 
         Assert.Null(result.AssignedTo);
@@ -160,12 +162,13 @@ public class UpdateTaskCommandHandlerTests : HandlerTestBase
         await AddProjectAsync("project-1", owner.Id);
         await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
         await AddMemberAsync("project-1", admin.Id, ProjectMemberRole.Admin);
+        var dueDate = DateTime.UtcNow.AddDays(5);
         var task = await AddTaskAsync("task-1", "project-1", owner.Id,
-            status: TaskItemStatus.InReview, assignedToId: admin.Id);
+            status: TaskItemStatus.InReview, assignedToId: admin.Id, dueDate: dueDate);
         CurrentUser.UserId = admin.Id;
 
         var result = await _handler.Handle(new UpdateTaskCommand(
-            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Medium, admin.Id, null),
+            task.Id, "T", null, TaskItemStatus.Todo, TaskItemPriority.Medium, admin.Id, dueDate),
             CancellationToken.None);
 
         Assert.Equal(TaskItemStatus.Todo, result.Status);
@@ -195,9 +198,63 @@ public class UpdateTaskCommandHandlerTests : HandlerTestBase
         CurrentUser.UserId = owner.Id;
 
         var result = await _handler.Handle(new UpdateTaskCommand(
-            task.Id, "T", null, TaskItemStatus.InProgress, TaskItemPriority.Medium, owner.Id, null),
+            task.Id, "T", null, TaskItemStatus.InProgress, TaskItemPriority.Medium, owner.Id,
+            DateTime.UtcNow.AddDays(5)),
             CancellationToken.None);
 
         Assert.Equal(TaskItemStatus.InProgress, result.Status);
+    }
+
+    [Fact]
+    public async Task Handle_ThrowsBusinessRule_WhenActiveTaskLosesItsDueDate()
+    {
+        var owner = await AddUserAsync("owner-1");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id,
+            status: TaskItemStatus.InReview, assignedToId: owner.Id, dueDate: DateTime.UtcNow.AddDays(3));
+        CurrentUser.UserId = owner.Id;
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _handler.Handle(new UpdateTaskCommand(
+            task.Id, "T", null, TaskItemStatus.InReview, TaskItemPriority.Medium, owner.Id, null),
+            CancellationToken.None));
+
+        Assert.Contains("require a due date", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Handle_ThrowsBusinessRule_WhenTerminalTaskCarriesDueDate()
+    {
+        var owner = await AddUserAsync("owner-1");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id,
+            status: TaskItemStatus.InReview, assignedToId: owner.Id, dueDate: DateTime.UtcNow.AddDays(3));
+        CurrentUser.UserId = owner.Id;
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _handler.Handle(new UpdateTaskCommand(
+            task.Id, "T", null, TaskItemStatus.Done, TaskItemPriority.Medium, owner.Id,
+            DateTime.UtcNow.AddDays(5)),
+            CancellationToken.None));
+
+        Assert.Contains("cannot have a due date", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Handle_DropsDueDate_WhenMovingToTerminalStatus()
+    {
+        var owner = await AddUserAsync("owner-1");
+        await AddProjectAsync("project-1", owner.Id);
+        await AddMemberAsync("project-1", owner.Id, ProjectMemberRole.Owner);
+        var task = await AddTaskAsync("task-1", "project-1", owner.Id,
+            status: TaskItemStatus.InReview, assignedToId: owner.Id, dueDate: DateTime.UtcNow.AddDays(3));
+        CurrentUser.UserId = owner.Id;
+
+        var result = await _handler.Handle(new UpdateTaskCommand(
+            task.Id, "T", null, TaskItemStatus.Done, TaskItemPriority.Medium, owner.Id, null),
+            CancellationToken.None);
+
+        Assert.Equal(TaskItemStatus.Done, result.Status);
+        Assert.Null(result.DueDate);
     }
 }

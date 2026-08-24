@@ -80,6 +80,22 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskR
             }
         }
 
+        // Due-date governance: active statuses require a due date, terminal
+        // statuses forbid one.
+        if (request.Status is TaskItemStatus.Todo or TaskItemStatus.InProgress or TaskItemStatus.InReview &&
+            request.DueDate is null)
+        {
+            throw new BusinessRuleException(
+                $"Tasks in '{request.Status}' status require a due date.");
+        }
+
+        if (request.Status is TaskItemStatus.Done or TaskItemStatus.Cancelled &&
+            request.DueDate is not null)
+        {
+            throw new BusinessRuleException(
+                $"Tasks in '{request.Status}' status cannot have a due date.");
+        }
+
         var assignedToId = string.IsNullOrWhiteSpace(request.AssignedToId) ? null : request.AssignedToId;
 
         if (assignedToId is not null)
