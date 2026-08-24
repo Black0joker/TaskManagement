@@ -37,8 +37,9 @@ public class CreateProjectLabelCommandHandler : IRequestHandler<CreateProjectLab
             throw new ForbiddenAccessException("Only project owners and admins can manage labels.");
         }
 
-        //it might be a race codition her.
-
+        // Fast-path duplicate check. The authoritative guard is the unique
+        // database index on (Name, ProjectId); the pre-check only improves
+        // the common-case error response.
         var duplicate = await _context.Labels
             .AsNoTracking()
             .AnyAsync(
@@ -58,7 +59,18 @@ public class CreateProjectLabelCommandHandler : IRequestHandler<CreateProjectLab
         };
 
         _context.Labels.Add(label);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Lost the race against a concurrent insert: the unique index on
+            // (Name, ProjectId) rejected the duplicate. Surface a 409 instead
+            // of a 500.
+            throw new ConflictException("A label with this name already exists in the project.");
+        }
 
         return new ProjectLabelSummary(label.Id, label.Name, label.Color);
     }
