@@ -35,6 +35,7 @@ public class IdentityService : IIdentityService
             FirstName = request.FirstName,
             LastName = request.LastName,
             EmailConfirmed = true,
+            LockoutEnabled = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -54,16 +55,32 @@ public class IdentityService : IIdentityService
         return IdentityOperationResult.Success(user.Id);
     }
 
-    public async Task<ApplicationUserDto?> ValidateCredentialsAsync(string email, string password)
+    public async Task<CredentialValidationResult> ValidateCredentialsAsync(string email, string password)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            return null;
+            return CredentialValidationResult.Invalid();
         }
 
-        var isValid = await _userManager.CheckPasswordAsync(user, password);
-        return isValid ? ToDto(user) : null;
+        // A locked-out account is rejected without checking the password so the
+        // lockout duration cannot be probed or shortened with correct guesses.
+        if (await _userManager.IsLockedOutAsync(user))
+        {
+            return CredentialValidationResult.LockedOut();
+        }
+
+        if (await _userManager.CheckPasswordAsync(user, password))
+        {
+            // Successful login resets the failed-attempt counter.
+            await _userManager.ResetAccessFailedCountAsync(user);
+            return CredentialValidationResult.Success(ToDto(user));
+        }
+
+        // Increments the per-account counter and locks the account once
+        // MaxFailedAccessAttempts is reached (see LockoutOptions).
+        await _userManager.AccessFailedAsync(user);
+        return CredentialValidationResult.Invalid();
     }
 
     public async Task<IReadOnlyList<string>> GetRolesAsync(string userId)

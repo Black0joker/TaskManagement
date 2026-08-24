@@ -65,6 +65,13 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = true;
                 options.Password.RequiredLength = 8;
                 options.User.RequireUniqueEmail = true;
+
+                // Per-account lockout against brute-force attacks. This complements
+                // the IP-based rate limiting: distributed attackers can spread
+                // attempts across IPs but cannot avoid the per-account counter.
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();

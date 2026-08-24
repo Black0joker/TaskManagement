@@ -35,13 +35,22 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenRespon
 
     public async Task<AuthTokenResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _identityService.ValidateCredentialsAsync(request.Email, request.Password);
-        if (user is null)
+        var result = await _identityService.ValidateCredentialsAsync(request.Email, request.Password);
+
+        if (!result.Succeeded)
         {
             // Only the email is logged; passwords and tokens are never written to logs.
-            _logger.LogWarning("Failed login attempt for email {Email}", request.Email);
-            throw new UnauthorizedException("Invalid email or password.");
+            _logger.LogWarning(
+                "Failed login attempt for email {Email} (lockedOut: {IsLockedOut})",
+                request.Email,
+                result.IsLockedOut);
+
+            throw new UnauthorizedException(result.IsLockedOut
+                ? "The account is temporarily locked due to multiple failed login attempts. Please try again later."
+                : "Invalid email or password.");
         }
+
+        var user = result.User!;
 
         var roles = await _identityService.GetRolesAsync(user.Id);
         var (accessToken, accessTokenExpiresAt) = _jwtTokenGenerator.GenerateAccessToken(user.Id, user.Email, roles);
