@@ -6,6 +6,16 @@ namespace TaskManagement.Application.Abstractions.Projects;
 /// Determines the current user's membership role within a project.
 /// Used to enforce that users can only access projects they belong to.
 /// </summary>
+/// <remarks>
+/// Authorization convention (enforced by AuthorizationArchitectureTests):
+/// controller policies are claim-based and NOT project-scoped, so every
+/// handler that reads or mutates project-scoped data must enforce
+/// membership through this service itself. Reads use
+/// <see cref="CanReadAsync"/> and return 404 for both missing and
+/// inaccessible resources; mutations use <see cref="CanContributeAsync"/>
+/// or <see cref="CanManageAsync"/> and throw
+/// <c>ForbiddenAccessException</c> (403).
+/// </remarks>
 public interface IProjectAccessService
 {
     /// <summary>
